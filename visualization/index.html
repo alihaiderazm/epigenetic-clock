@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Epigenetic Clock Errors</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --horvath: #2a78d6;
+    --hannum: #eb6834;
+    --neutral-dot: #c3c2b7;
+    --select: #0b0b0b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface-1: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255,255,255,0.10);
+      --horvath: #3987e5;
+      --hannum: #d95926;
+      --neutral-dot: #52514e;
+      --select: #f0efec;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --horvath: #3987e5;
+    --hannum: #d95926;
+    --neutral-dot: #52514e;
+    --select: #f0efec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 2px; }
+  .sub { color: var(--text-secondary); margin: 0 0 16px; max-width: 80ch; }
+  .note { color: var(--text-muted); font-size: 12px; margin: 4px 0 0; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; min-width: 0;
+  }
+  .filters {
+    display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end;
+    margin-bottom: 16px;
+  }
+  .filters label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+  .filters select, .filters input[type=number], .filters button {
+    font: inherit; color: var(--text-primary); background: var(--surface-1);
+    border: 1px solid var(--axis); border-radius: 6px; padding: 4px 8px;
+  }
+  .filters button { cursor: pointer; }
+  .filters input[type=number] { width: 64px; }
+  .range-val { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi .label { font-size: 12px; color: var(--text-secondary); }
+  .kpi .value { font-size: 26px; font-weight: 600; }
+  .kpi .delta { font-size: 12px; color: var(--text-muted); }
+  .grid2 { display: grid; grid-template-columns: 1.25fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid2b { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 860px) { .grid2, .grid2b { grid-template-columns: 1fr; } }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .axis text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .axis path, .axis line { stroke: var(--axis); }
+  .gridline line { stroke: var(--grid); }
+  .gridline path { display: none; }
+  .axis-title { fill: var(--text-secondary); font-size: 12px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin: 6px 0 8px; }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 6px; vertical-align: -1px; background: var(--c);
+  }
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--surface-1); color: var(--text-primary); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    font-variant-numeric: tabular-nums; max-width: 260px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-secondary); font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  .person dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
+  .person dt { color: var(--text-secondary); }
+  .person dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>When does the epigenetic clock get your age wrong?</h1>
+  <p class="sub">Phase I (black-box view). The Horvath and Hannum clocks applied to GSE40279: 656 people, whole blood, Illumina 450K.
+    Each dot is one person. Note: Hannum was trained on this dataset, so its errors here are optimistic (in-sample).</p>
+
+  <div class="filters card" role="group" aria-label="Filters">
+    <label>Clock
+      <select id="f-clock"><option value="Horvath">Horvath (353 CpGs)</option><option value="Hannum">Hannum (71 CpGs)</option></select>
+    </label>
+    <label>Sex
+      <select id="f-sex"><option value="all">All</option><option value="F">Female</option><option value="M">Male</option></select>
+    </label>
+    <label>Ethnicity <select id="f-eth"><option value="all">All</option></select></label>
+    <label>Age from <input id="f-amin" type="number" min="0" max="120" value="0"></label>
+    <label>to <input id="f-amax" type="number" min="0" max="120" value="120"></label>
+    <label>Big error over <span class="range-val" id="v-thr">8 y</span>
+      <input id="f-thr" type="range" min="2" max="20" step="1" value="8">
+    </label>
+    <label>Measurement noise (SD of beta) <span class="range-val" id="v-noise">0.000</span>
+      <input id="f-noise" type="range" min="0" max="0.1" step="0.005" value="0">
+    </label>
+    <label>Missing CpGs <span class="range-val" id="v-drop">0%</span>
+      <input id="f-drop" type="range" min="0" max="5" step="1" value="0">
+    </label>
+    <label>&nbsp;<button id="b-reroll" type="button">New random draw</button></label>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>1 · Where is the clock wrong? Predicted vs. real age</h2>
+      <div class="legend" id="legend-scatter"></div>
+      <svg id="scatter" viewBox="0 0 640 460" role="img" aria-label="Scatter plot of predicted versus real age"></svg>
+      <p class="note">Diagonal = perfect prediction. Coloured dots are off by more than the threshold. With noise or missing CpGs on, faint lines connect each person's original prediction to the perturbed one. Click a dot to select a person.</p>
+    </section>
+    <section class="card">
+      <h2>Error by age</h2>
+      <div class="legend" id="legend-resid"></div>
+      <svg id="resid" viewBox="0 0 520 460" role="img" aria-label="Residual by age with mean residual per 5-year band for both clocks"></svg>
+      <p class="note">Residual = predicted − real age. Below zero = the clock thinks you are younger. Lines show the mean residual per 5-year band for both clocks; dots are the selected clock.</p>
+    </section>
+  </div>
+
+  <div class="grid2b">
+    <section class="card">
+      <h2>Stability: average error under perturbation</h2>
+      <div class="legend" id="legend-pert"></div>
+      <svg id="pert" viewBox="0 0 520 300" role="img" aria-label="Mean absolute error versus measurement noise for both clocks"></svg>
+      <p class="note">All 656 people, mean of 20 random draws per setting (from scripts/03_compute_clocks.py), at the selected share of missing CpGs. Missing CpGs are replaced by the CpG median. The vertical rule marks the current noise slider.</p>
+    </section>
+    <section class="card person" id="person">
+      <h2>Selected person</h2>
+      <p class="note">Click a dot in view 1. In Phase II this panel becomes the per-CpG contribution waterfall (view 2) and the aging-DNA view (view 3).</p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Summary metrics per group <select id="f-group" aria-label="Group by" style="font:inherit;margin-left:8px">
+      <option value="ageBand">Age band</option><option value="sex">Sex</option><option value="ethnicity">Ethnicity</option><option value="plate">Plate (batch)</option></select></h2>
+    <p class="note">Respects the filters above (except the grouping column) and the current noise setting. MAE = mean absolute error; bias = mean residual.</p>
+    <div class="table-wrap"><table id="metrics"></table></div>
+  </section>
+</main>
+<div class="tooltip" id="tip" role="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="data.js"></script>
+<script>
+(() => {
+  const D = window.CLOCK_DATA;
+  const S = D.samples;
+  const N = S.length;
+  const CLOCKS = ["Horvath", "Hannum"];
+  const DROP_STEPS = [0, 0.05, 0.1, 0.2, 0.3, 0.5];
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const colorOf = c => css(c === "Horvath" ? "--horvath" : "--hannum");
+  const ageBand = a => a < 40 ? "<40" : a < 50 ? "40-49" : a < 60 ? "50-59" : a < 70 ? "60-69" : a < 80 ? "70-79" : "80+";
+  S.forEach(s => s.ageBand = ageBand(s.age));
+
+  // ---------- clock math (mirrors scripts/03_compute_clocks.py) ----------
+  const cpgs = Object.keys(D.betas);
+  const cpgIndex = Object.fromEntries(cpgs.map((c, i) => [c, i]));
+  const beta = cpgs.map(c => Float32Array.from(D.betas[c]));
+  const median = cpgs.map(c => D.medians[c]);
+  const antiTrafo = x => x < 0 ? 21 * Math.exp(x) - 1 : 21 * x + 20;
+
+  let seed = 1;
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  let Z, U;
+  function draw() {
+    const r = mulberry32(seed++);
+    Z = cpgs.map(() => { const z = new Float32Array(N); for (let j = 0; j < N; j++) { const u1 = r() || 1e-9, u2 = r(); z[j] = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2); } return z; });
+    U = cpgs.map(() => r());
+  }
+  draw();
+
+  function predictAll(clock, sd, drop) {
+    const w = D.weights[clock].w, idx = D.weights[clock].cpgs.map(c => cpgIndex[c]);
+    const out = new Float64Array(N);
+    for (let j = 0; j < N; j++) {
+      let s = clock === "Horvath" ? D.horvathIntercept : 0;
+      for (let k = 0; k < idx.length; k++) {
+        const i = idx[k];
+        let b;
+        if (U[i] < drop) b = median[i];
+        else if (sd > 0) b = Math.min(1, Math.max(0, beta[i][j] + sd * Z[i][j]));
+        else b = beta[i][j];
+        s += w[k] * b;
+      }
+      out[j] = clock === "Horvath" ? antiTrafo(s) : s;
+    }
+    return out;
+  }
+  const base = Object.fromEntries(CLOCKS.map(c => [c, predictAll(c, 0, 0)]));
+  CLOCKS.forEach(c => {
+    const maxDiff = d3.max(S, (s, j) => Math.abs(s[c] - base[c][j]));
+    console.info(`${c}: browser vs Python max |diff| = ${maxDiff.toFixed(3)} years`);
+  });
+
+  // ---------- state & controls ----------
+  const $ = id => document.getElementById(id);
+  const ethnicities = [...new Set(S.map(s => s.ethnicity))].sort();
+  ethnicities.forEach(e => { const o = document.createElement("option"); o.value = e; o.textContent = e; $("f-eth").append(o); });
+  let selected = null;
+  let cur = base;
+
+  const state = () => ({
+    clock: $("f-clock").value, sex: $("f-sex").value, eth: $("f-eth").value,
+    amin: +$("f-amin").value, amax: +$("f-amax").value, thr: +$("f-thr").value,
+    noise: +$("f-noise").value, drop: DROP_STEPS[+$("f-drop").value], group: $("f-group").value,
+  });
+  const passes = (s, st, skip) =>
+    (skip === "sex" || st.sex === "all" || s.sex === st.sex) &&
+    (skip === "ethnicity" || st.eth === "all" || s.ethnicity === st.eth) &&
+    s.age >= st.amin && s.age <= st.amax;
+
+  function stats(ix, pred) {
+    if (!ix.length) return null;
+    const err = ix.map(j => pred[j] - S[j].age), ages = ix.map(j => S[j].age), p = ix.map(j => pred[j]);
+    const abs = err.map(Math.abs);
+    const mA = d3.mean(ages), mP = d3.mean(p);
+    const r = ix.length > 2 ? d3.sum(ix, (_, k) => (ages[k] - mA) * (p[k] - mP)) /
+      Math.sqrt(d3.sum(ages, a => (a - mA) ** 2) * d3.sum(p, v => (v - mP) ** 2)) : NaN;
+    return { n: ix.length, mae: d3.mean(abs), medae: d3.median(abs), bias: d3.mean(err), r };
+  }
+
+  // ---------- tooltip ----------
+  const tip = $("tip");
+  function showTip(ev, rows) {
+    tip.replaceChildren(...rows.map(([k, v]) => { const d = document.createElement("div"); const b = document.createElement("b"); b.textContent = k + ": "; d.append(b, String(v)); return d; }));
+    tip.style.display = "block";
+    const x = Math.min(ev.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(ev.clientY + 14, innerHeight - tip.offsetHeight - 8);
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  const hideTip = () => tip.style.display = "none";
+  const personRows = j => {
+    const s = S[j], st = state();
+    return [["Sample", s.id], ["Real age", s.age], ["Sex", s.sex], ["Ethnicity", s.ethnicity],
+      [`${st.clock} predicted`, cur[st.clock][j].toFixed(1)], ["Error", (cur[st.clock][j] - s.age).toFixed(1) + " y"]];
+  };
+
+  // ---------- legends ----------
+  function legend(el, items) {
+    $(el).replaceChildren(...items.map(([label, color]) => { const s = document.createElement("span"); s.style.setProperty("--c", color); s.textContent = label; return s; }));
+  }
+
+  // ---------- view 1: scatter ----------
+  const W1 = 640, H1 = 460, m1 = { t: 10, r: 16, b: 44, l: 52 };
+  const sc = d3.select("#scatter");
+  const x1 = d3.scaleLinear().domain([10, 110]).range([m1.l, W1 - m1.r]);
+  const y1 = d3.scaleLinear().domain([10, 110]).range([H1 - m1.b, m1.t]);
+  sc.append("g").attr("class", "gridline").attr("transform", `translate(${m1.l},0)`).call(d3.axisLeft(y1).tickSize(-(W1 - m1.l - m1.r)).tickFormat(""));
+  sc.append("g").attr("class", "axis").attr("transform", `translate(0,${H1 - m1.b})`).call(d3.axisBottom(x1));
+  sc.append("g").attr("class", "axis").attr("transform", `translate(${m1.l},0)`).call(d3.axisLeft(y1));
+  sc.append("text").attr("class", "axis-title").attr("x", (W1 + m1.l) / 2).attr("y", H1 - 8).attr("text-anchor", "middle").text("Real (chronological) age");
+  sc.append("text").attr("class", "axis-title").attr("transform", `translate(14,${(H1 - m1.b) / 2}) rotate(-90)`).attr("text-anchor", "middle").text("Predicted age");
+  sc.append("line").attr("x1", x1(10)).attr("y1", y1(10)).attr("x2", x1(110)).attr("y2", y1(110)).attr("stroke", "var(--axis)").attr("stroke-width", 2).attr("stroke-dasharray", "4 4");
+  const gBand = sc.append("g"), gLinks = sc.append("g"), gDots = sc.append("g"), gSel = sc.append("g");
+
+  // ---------- view 1b: residual by age ----------
+  const W2 = 520, H2 = 460, m2 = { t: 10, r: 60, b: 44, l: 52 };
+  const rs = d3.select("#resid");
+  const x2 = d3.scaleLinear().domain([10, 110]).range([m2.l, W2 - m2.r]);
+  const y2 = d3.scaleLinear().domain([-35, 35]).range([H2 - m2.b, m2.t]);
+  rs.append("g").attr("class", "gridline").attr("transform", `translate(${m2.l},0)`).call(d3.axisLeft(y2).tickSize(-(W2 - m2.l - m2.r)).tickFormat(""));
+  rs.append("g").attr("class", "axis").attr("transform", `translate(0,${H2 - m2.b})`).call(d3.axisBottom(x2));
+  rs.append("g").attr("class", "axis").attr("transform", `translate(${m2.l},0)`).call(d3.axisLeft(y2));
+  rs.append("line").attr("x1", m2.l).attr("x2", W2 - m2.r).attr("y1", y2(0)).attr("y2", y2(0)).attr("stroke", "var(--axis)").attr("stroke-width", 2);
+  rs.append("text").attr("class", "axis-title").attr("x", (W2 + m2.l - m2.r) / 2).attr("y", H2 - 8).attr("text-anchor", "middle").text("Real age");
+  rs.append("text").attr("class", "axis-title").attr("transform", `translate(14,${(H2 - m2.b) / 2}) rotate(-90)`).attr("text-anchor", "middle").text("Residual (years)");
+  const gRDots = rs.append("g"), gRLines = rs.append("g"), gRSel = rs.append("g");
+
+  // ---------- perturbation chart ----------
+  const W3 = 520, H3 = 300, m3 = { t: 10, r: 70, b: 40, l: 52 };
+  const pc = d3.select("#pert");
+  const x3 = d3.scaleLinear().domain([0, 0.1]).range([m3.l, W3 - m3.r]);
+  const y3 = d3.scaleLinear().range([H3 - m3.b, m3.t]);
+  const gP = pc.append("g");
+  pc.append("text").attr("class", "axis-title").attr("x", (W3 + m3.l - m3.r) / 2).attr("y", H3 - 6).attr("text-anchor", "middle").text("Measurement noise (SD of beta value)");
+  pc.append("text").attr("class", "axis-title").attr("transform", `translate(14,${(H3 - m3.b) / 2}) rotate(-90)`).attr("text-anchor", "middle").text("Mean absolute error (years)");
+
+  function renderPert(st) {
+    gP.selectAll("*").remove();
+    const rows = D.perturbation.filter(r => Math.abs(r.drop_frac - st.drop) < 1e-9);
+    y3.domain([0, Math.max(10, d3.max(D.perturbation, r => r.mae) * 1.05)]).nice();
+    gP.append("g").attr("class", "gridline").attr("transform", `translate(${m3.l},0)`).call(d3.axisLeft(y3).ticks(5).tickSize(-(W3 - m3.l - m3.r)).tickFormat(""));
+    gP.append("g").attr("class", "axis").attr("transform", `translate(0,${H3 - m3.b})`).call(d3.axisBottom(x3).ticks(5));
+    gP.append("g").attr("class", "axis").attr("transform", `translate(${m3.l},0)`).call(d3.axisLeft(y3).ticks(5));
+    gP.append("line").attr("x1", x3(st.noise)).attr("x2", x3(st.noise)).attr("y1", m3.t).attr("y2", H3 - m3.b).attr("stroke", "var(--text-muted)").attr("stroke-dasharray", "3 3");
+    CLOCKS.forEach(c => {
+      const pts = rows.filter(r => r.clock === c).sort((a, b) => a.noise_sd - b.noise_sd);
+      const col = colorOf(c);
+      gP.append("path").datum(pts).attr("fill", "none").attr("stroke", col).attr("stroke-width", 2)
+        .attr("d", d3.line().x(r => x3(r.noise_sd)).y(r => y3(r.mae)));
+      gP.selectAll(null).data(pts).join("circle").attr("cx", r => x3(r.noise_sd)).attr("cy", r => y3(r.mae)).attr("r", 4)
+        .attr("fill", col).attr("stroke", "var(--surface-1)").attr("stroke-width", 2)
+        .on("mousemove", (ev, r) => showTip(ev, [["Clock", c], ["Noise SD", r.noise_sd], ["Missing CpGs", (r.drop_frac * 100) + "%"], ["MAE", r.mae.toFixed(2) + " y"], ["Bias", r.bias.toFixed(2) + " y"], ["r", r.r.toFixed(3)]]))
+        .on("mouseleave", hideTip);
+      const last = pts[pts.length - 1];
+      if (last) gP.append("text").attr("x", x3(last.noise_sd) + 8).attr("y", y3(last.mae) + 4).attr("fill", "var(--text-secondary)").attr("font-size", 12).text(c);
+    });
+  }
+
+  // ---------- render ----------
+  function render() {
+    const st = state();
+    $("v-thr").textContent = st.thr + " y";
+    $("v-noise").textContent = st.noise.toFixed(3);
+    $("v-drop").textContent = Math.round(st.drop * 100) + "%";
+    const perturbed = st.noise > 0 || st.drop > 0;
+    cur = perturbed ? Object.fromEntries(CLOCKS.map(c => [c, predictAll(c, st.noise, st.drop)])) : base;
+    const pred = cur[st.clock], col = colorOf(st.clock);
+    const ix = d3.range(N).filter(j => passes(S[j], st));
+
+    legend("legend-scatter", [[`${st.clock}: off by more than ${st.thr} y`, col], [`within ${st.thr} y`, css("--neutral-dot")]]);
+    legend("legend-resid", CLOCKS.map(c => [`${c} mean per band`, colorOf(c)]));
+    legend("legend-pert", CLOCKS.map(c => [c, colorOf(c)]));
+
+    // KPIs
+    const k = stats(ix, pred), kb = stats(ix, base[st.clock]);
+    const big = ix.filter(j => Math.abs(pred[j] - S[j].age) > st.thr).length;
+    const tiles = k ? [
+      ["People shown", k.n, `of ${N}`],
+      [`${st.clock} MAE`, k.mae.toFixed(1) + " y", perturbed ? `without perturbation ${kb.mae.toFixed(1)} y` : `median ${k.medae.toFixed(1)} y`],
+      ["Bias (mean residual)", (k.bias > 0 ? "+" : "") + k.bias.toFixed(1) + " y", k.bias < 0 ? "predicts younger on average" : "predicts older on average"],
+      ["Correlation r", k.r.toFixed(3), "predicted vs. real age"],
+      [`Off by > ${st.thr} y`, big, `${(100 * big / k.n).toFixed(0)}% of shown`],
+    ] : [["People shown", 0, "no one matches the filters"]];
+    $("kpis").replaceChildren(...tiles.map(([l, v, d]) => {
+      const el = document.createElement("div"); el.className = "card kpi";
+      const a = document.createElement("div"); a.className = "label"; a.textContent = l;
+      const b = document.createElement("div"); b.className = "value"; b.textContent = v;
+      const c = document.createElement("div"); c.className = "delta"; c.textContent = d;
+      el.append(a, b, c); return el;
+    }));
+
+    // threshold band around the diagonal
+    gBand.selectAll("*").remove();
+    gBand.append("path").attr("fill", "var(--grid)").attr("opacity", 0.6)
+      .attr("d", `M${x1(10)},${y1(10 + st.thr)} L${x1(110 - st.thr)},${y1(110)} L${x1(110)},${y1(110)} L${x1(110)},${y1(110 - st.thr)} L${x1(10 + st.thr)},${y1(10)} L${x1(10)},${y1(10)} Z`);
+
+    gLinks.selectAll("line").data(perturbed ? ix : [], j => j).join("line")
+      .attr("x1", j => x1(S[j].age)).attr("x2", j => x1(S[j].age))
+      .attr("y1", j => y1(base[st.clock][j])).attr("y2", j => y1(pred[j]))
+      .attr("stroke", "var(--text-muted)").attr("stroke-opacity", 0.35);
+
+    const isBig = j => Math.abs(pred[j] - S[j].age) > st.thr;
+    const order = [...ix].sort((a, b) => isBig(a) - isBig(b));
+    gDots.selectAll("circle").data(order, j => j).join("circle")
+      .attr("cx", j => x1(S[j].age)).attr("cy", j => y1(pred[j])).attr("r", j => isBig(j) ? 4.5 : 3.5)
+      .attr("fill", j => isBig(j) ? col : "var(--neutral-dot)")
+      .attr("stroke", "var(--surface-1)").attr("stroke-width", 1).style("cursor", "pointer")
+      .raise();
+    gDots.selectAll("circle").on("mousemove", (ev, j) => showTip(ev, personRows(j))).on("mouseleave", hideTip)
+      .on("click", (_, j) => { selected = j; render(); });
+
+    // residual view
+    gRDots.selectAll("circle").data(ix, j => j).join("circle")
+      .attr("cx", j => x2(S[j].age)).attr("cy", j => y2(Math.max(-35, Math.min(35, pred[j] - S[j].age))))
+      .attr("r", 3).attr("fill", "var(--neutral-dot)").attr("opacity", 0.7)
+      .on("mousemove", (ev, j) => showTip(ev, personRows(j))).on("mouseleave", hideTip)
+      .on("click", (_, j) => { selected = j; render(); });
+    gRLines.selectAll("*").remove();
+    CLOCKS.forEach(c => {
+      const bins = d3.rollups(ix, v => ({ n: v.length, m: d3.mean(v, j => cur[c][j] - S[j].age) }), j => Math.floor(S[j].age / 5) * 5)
+        .filter(([, v]) => v.n >= 5).sort((a, b) => a[0] - b[0]);
+      const cc = colorOf(c);
+      gRLines.append("path").datum(bins).attr("fill", "none").attr("stroke", cc).attr("stroke-width", 2)
+        .attr("d", d3.line().x(([a]) => x2(a + 2.5)).y(([, v]) => y2(v.m)));
+      gRLines.selectAll(null).data(bins).join("circle").attr("cx", ([a]) => x2(a + 2.5)).attr("cy", ([, v]) => y2(v.m)).attr("r", 4)
+        .attr("fill", cc).attr("stroke", "var(--surface-1)").attr("stroke-width", 2)
+        .on("mousemove", (ev, [a, v]) => showTip(ev, [["Clock", c], ["Age band", `${a}-${a + 4}`], ["People", v.n], ["Mean residual", v.m.toFixed(2) + " y"]]))
+        .on("mouseleave", hideTip);
+      const last = bins[bins.length - 1];
+      if (last) gRLines.append("text").attr("x", x2(last[0] + 2.5) + 8).attr("y", y2(last[1].m) + 4).attr("fill", "var(--text-secondary)").attr("font-size", 12).text(c);
+    });
+
+    // selection ring
+    const sel = selected != null && passes(S[selected], st) ? [selected] : [];
+    gSel.selectAll("circle").data(sel).join("circle").attr("cx", j => x1(S[j].age)).attr("cy", j => y1(pred[j]))
+      .attr("r", 8).attr("fill", "none").attr("stroke", "var(--select)").attr("stroke-width", 2).attr("pointer-events", "none");
+    gRSel.selectAll("circle").data(sel).join("circle").attr("cx", j => x2(S[j].age)).attr("cy", j => y2(Math.max(-35, Math.min(35, pred[j] - S[j].age))))
+      .attr("r", 7).attr("fill", "none").attr("stroke", "var(--select)").attr("stroke-width", 2).attr("pointer-events", "none");
+    renderPerson();
+    renderPert(st);
+    renderTable(st);
+  }
+
+  function renderPerson() {
+    const el = $("person");
+    el.querySelectorAll("dl").forEach(n => n.remove());
+    if (selected == null) return;
+    const s = S[selected], dl = document.createElement("dl");
+    const add = (k, v, color) => {
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd");
+      if (color) { const sw = document.createElement("span"); sw.className = "swatch"; sw.style.background = color; dd.append(sw); }
+      dd.append(v); dl.append(dt, dd);
+    };
+    add("Sample", s.id); add("Real age", s.age + " y"); add("Sex", s.sex); add("Ethnicity", s.ethnicity); add("Plate", s.plate);
+    CLOCKS.forEach(c => {
+      const e = cur[c][selected] - s.age, eb = base[c][selected] - s.age;
+      add(c, `${cur[c][selected].toFixed(1)} y (error ${e > 0 ? "+" : ""}${e.toFixed(1)})` +
+        (cur !== base ? `, without perturbation ${eb > 0 ? "+" : ""}${eb.toFixed(1)}` : ""), colorOf(c));
+    });
+    el.append(dl);
+  }
+
+  function renderTable(st) {
+    const key = st.group;
+    const ix = d3.range(N).filter(j => passes(S[j], st, key));
+    const groups = d3.groups(ix, j => S[j][key]).sort((a, b) => d3.ascending(String(a[0]), String(b[0])));
+    const sortKey = { ageBand: ["<40", "40-49", "50-59", "60-69", "70-79", "80+"] }[key];
+    if (sortKey) groups.sort((a, b) => sortKey.indexOf(a[0]) - sortKey.indexOf(b[0]));
+    if (key === "plate") groups.sort((a, b) => +a[0] - +b[0]);
+    const head = ["Group", "n", "Horvath MAE", "Horvath bias", "Horvath r", "Hannum MAE", "Hannum bias", "Hannum r"];
+    const rows = [["All (filtered)", ix], ...groups].map(([g, gi]) => {
+      const h = stats(gi, cur.Horvath), n = stats(gi, cur.Hannum);
+      const f = (v, d = 1) => isFinite(v) ? v.toFixed(d) : "–";
+      const sgn = v => isFinite(v) ? (v > 0 ? "+" : "") + v.toFixed(1) : "–";
+      return [g, gi.length, f(h?.mae), sgn(h?.bias), f(h?.r, 3), f(n?.mae), sgn(n?.bias), f(n?.r, 3)];
+    });
+    const t = $("metrics");
+    const thead = document.createElement("thead"), tr = document.createElement("tr");
+    head.forEach(h => { const th = document.createElement("th"); th.textContent = h; tr.append(th); });
+    thead.append(tr);
+    const tbody = document.createElement("tbody");
+    rows.forEach(r => { const tr = document.createElement("tr"); r.forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.append(td); }); tbody.append(tr); });
+    t.replaceChildren(thead, tbody);
+  }
+
+  ["f-clock", "f-sex", "f-eth", "f-amin", "f-amax", "f-thr", "f-noise", "f-drop", "f-group"]
+    .forEach(id => $(id).addEventListener("input", render));
+  $("b-reroll").addEventListener("click", () => { draw(); render(); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  render();
+})();
+</script>
+</body>
+</html>

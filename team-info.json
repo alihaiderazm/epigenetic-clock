@@ -1,0 +1,27 @@
+{
+    "submission_id": 1,
+    "submission_type": "midpoint",
+    "team_name": "Neural Ninjas",
+    "students": [
+        {
+            "first_name": "Ali Haider",
+            "last_name": "Warraich",
+            "workload": 0.25
+        },
+        {
+            "first_name": "Abrar",
+            "last_name": "Ahmad",
+            "workload": 0.25
+        },
+        {
+            "first_name": "Haseeb",
+            "last_name": "Ahmed",
+            "workload": 0.25
+        },
+        {
+            "first_name": "Carola",
+            "last_name": "Gödeke",
+            "workload": 0.25
+        }
+    ]
+}

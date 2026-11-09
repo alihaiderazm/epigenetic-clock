@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.part
+
+# 1.2 GB GEO download, recreate with scripts/01_download_data.py
+data/raw/
+
+# intermediate audio/video segments, recreate with scripts/07_make_video.py
+video/_build/

@@ -1,0 +1,18 @@
+id,date,record,prompt_type,ai_suggestion,decision,reason
+0,2026-10,00_concept_preparation.md,concept drafting,Lean core scope: Horvath + Hannum on GSE40279; extras optional,accepted,Fits seven weeks
+0,2026-10,00_concept_preparation.md,concept drafting,Interactive sketch with invented data,accepted as orientation only,Non-AI pair must not use it as template
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Apply clocks in Python instead of methylclock (R missing),accepted then questioned and verified,See records 2 and 3
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Weights from biolearn CSVs (methylclockData needs R),accepted then verified,Identical to methylclockData
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Exact Horvath intercept 0.695507258 instead of rounded 0.696,accepted,Matches the paper
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Median imputation for missing betas,accepted (not needed: 0 missing),Simple and documented
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Defer GSE87571 and GPL13534,accepted,Not needed for midpoint
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Report plate effect after removing age trend (plates confounded with age/ethnicity),accepted,Avoids over-claiming batch effect
+1,2026-11-09,01_kickoff_full_context_prompt.md,full-context task,Phase I page: scatter + error-by-age + stability + metrics table + person panel,accepted (refine in Phase II),Covers RQ1 and RQ2
+2,2026-11-09,02_provenance_question.md,provenance question,Trust the Python re-implementation,rejected,Unverified substitution of a tool named in concept
+3,2026-11-09,03_verification_with_r.md,verification request,Install R + methylclock and cross-check,accepted,Reproducible numeric proof
+3,2026-11-09,03_verification_with_r.md,verification request,First cross-check reported Hannum weight mismatch 44.7,rejected (AI bug: read chromosome column),Contradicted identical predictions
+3,2026-11-09,03_verification_with_r.md,verification request,Fixed cross-check: coefficients and predictions identical,accepted,max diff 0.0000 y
+4,2026-11-09,04_submission_preparation.md,requirements pasted verbatim,Narration 302 s,rejected,Over 300 s limit
+4,2026-11-09,04_submission_preparation.md,requirements pasted verbatim,Narration shortened to 268 s,accepted,Leaves room for Pair B
+4,2026-11-09,04_submission_preparation.md,requirements pasted verbatim,Pair B slide with visible TODO,accepted,AI cannot know the other pair's work
+4,2026-11-09,04_submission_preparation.md,requirements pasted verbatim,Exclude 1.2 GB raw data from git,accepted,GitHub limits; reproducible
