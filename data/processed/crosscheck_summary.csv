@@ -1,0 +1,5 @@
+"clock","check","detail"
+"Horvath","coefficients","methylclockData CpGs=353, Python CpGs=353, shared=353, intercept=0.695507258, max |weight diff|=0"
+"Hannum","coefficients","methylclockData CpGs=71, Python CpGs=71, shared=71, intercept=none, max |weight diff|=0"
+"Horvath","predictions","n=656, mean diff (methylclock - Python)=0.0000 y, max |diff|=0.0000 y, r=1.000000"
+"Hannum","predictions","n=656, mean diff (methylclock - Python)=-0.0000 y, max |diff|=0.0000 y, r=1.000000"
