@@ -9,7 +9,7 @@
 | K12338096 | Abrar Ahmad | without GenAI |
 | K12557466 | Haseeb Ahmed | without GenAI |
 
-Midpoint progress video (≤ 5 min): `video/progress_update.mp4` · [Watch on Google Drive](https://drive.google.com/file/d/1placeholder_neural_ninjas_phase1/view) *(final link to be updated after upload)*
+Midpoint progress video (≤ 5 min): `video/progress_update.mp4` · [Watch on Google Drive](https://drive.google.com/file/d/1V7iFklE4GC859v1lBsFXu_ly4wSPpNKX/view?usp=sharing)
 
 ---
 
@@ -109,13 +109,12 @@ Open [`visualization/index.html`](visualization/index.html) in a browser. It nee
 │   ├── 04_build_visualization_data.py → visualization/data.js
 │   ├── 05_methylclock_crosscheck.R  verification against methylclock (R)
 │   ├── 06_make_figures.py           → figures/*.png
-│   └── 07_make_video.py             → video/progress_update.mp4 (slides + narration)
+│   
 ├── data/
 │   ├── clock_weights/           Horvath1.csv, Hannum.csv
 │   └── processed/               samples, clock CpG betas, predictions, metrics, perturbation, cross-check
 ├── visualization/               index.html + data.js (interactive Phase I view)
 ├── figures/                     static charts + UI screenshots
-└── video/                       progress video, slides, narration script (slides.json)
 ```
 
 ## Reproduce
