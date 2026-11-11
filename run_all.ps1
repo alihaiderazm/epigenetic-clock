@@ -1,6 +1,6 @@
 # Rebuilds everything from scratch: download -> extract -> clocks -> visualization data -> figures.
 # Usage (from the repository root):  powershell -ExecutionPolicy Bypass -File .\run_all.ps1
-# Optional afterwards: scripts\05_methylclock_crosscheck.R (needs R) and scripts\07_make_video.py (needs ffmpeg).
+# Optional afterwards: scripts\05_methylclock_crosscheck.R (needs R).
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 if (-not (Test-Path .venv)) {

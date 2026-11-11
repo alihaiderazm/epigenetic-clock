@@ -9,7 +9,6 @@
 | K12338096 | Abrar Ahmad | without GenAI |
 | K12557466 | Haseeb Ahmed | without GenAI |
 
-Midpoint progress video (≤ 5 min): `video/progress_update.mp4` · [Watch on Google Drive](https://drive.google.com/file/d/1V7iFklE4GC859v1lBsFXu_ly4wSPpNKX/view?usp=sharing)
 
 ---
 
@@ -124,11 +123,10 @@ Requires Python ≥ 3.11 on Windows (PowerShell); R 4.6 is optional for the cros
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_all.ps1       # scripts 01–04 and 06 (~10 min, 1.2 GB download)
 & "C:\Program Files\R\R-4.6.2\bin\Rscript.exe" scripts\05_methylclock_crosscheck.R   # needs BiocManager::install(c("methylclock","methylclockData"))
-.\.venv\Scripts\python.exe -I scripts\07_make_video.py       # needs ffmpeg; Windows text-to-speech
+.\.venv\Scripts\python.exe -I 
 ```
 
-The scripts are plain Python and run on other systems too. Only `run_all.ps1` and the narration step of `07_make_video.py` are Windows-specific.
-
+The scripts are plain Python and run on other systems too. Only `run_all.ps1`
 ## Next steps (Phase II)
 
 - Per-CpG contribution waterfall (`w·β`; ×21 for Horvath in years) for a selected person.
